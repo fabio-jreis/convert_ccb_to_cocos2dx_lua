@@ -465,7 +465,7 @@ def parse_node(dict, name, sequences_size):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print 'usage: parse_ccb_to_lua xxx.ccb'
+        print 'usage: convert_ccb_to_lua xxx.ccb'
         exit(0)
 
     input = sys.argv[1]
