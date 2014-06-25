@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014 - wusj@live.com
 
+
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -158,7 +159,7 @@ def get_properties(properties, valName):
 
     return ret, records
 
-def parse_node(dict, name, sequences_size):
+def parse_node(dict, name, sequence_ids):
     properties = {}
     animatedProperties = {}
     children = {}
@@ -349,7 +350,7 @@ def parse_node(dict, name, sequences_size):
         key = animatedProperties[index]
         value = animatedProperties[index + 1]
 
-        if len(value) > 0 and int(key.text) < sequences_size:
+        if len(value) > 0 and key.text in sequence_ids:
             output += "\tsequences[" + key.text + "].nodes[" + name + "] = {"
             i = 0
             while i < len(value):
@@ -431,7 +432,7 @@ def parse_node(dict, name, sequences_size):
                             elif action.text == 'color':
                                 keyDetail[v1.text] = "{r=" + v2[0].text + ", g=" + v2[1].text + ", b=" + v2[2].text + ", a=" + v2[3].text + "}"
                             elif action.text == 'spriteFrame':
-                                keyDetail[v1.text] = v2[0].text
+                                keyDetail[v1.text] = "'" + v2[0].text + "'"
                         elif v1.text == 'time':
                             keyDetail[v1.text] = v2.text
 
@@ -459,7 +460,7 @@ def parse_node(dict, name, sequences_size):
     for i in range(len(children)):
         childName = name + '_' + str(i)
         output += '\tlocal ' + childName + '_ref_size = ' + name + '_self_size\n'
-        result = parse_node(children[i], childName, sequences_size)
+        result = parse_node(children[i], childName, sequence_ids)
         if len(result) > 0:
             output += result
             output += '\t' + name + ':addChild(' + childName + ')\n\n'
@@ -468,7 +469,7 @@ def parse_node(dict, name, sequences_size):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print 'usage: convert_ccb_to_lua xxx.ccb'
+        print 'usage: parse_ccb_to_lua xxx.ccb'
         exit(0)
 
     input = sys.argv[1]
@@ -507,6 +508,7 @@ if __name__ == '__main__':
     result += "\nlocal " + ccbfile + " = {}\n\n"
     result += "function " + ccbfile + ".create(owner)\n"
 
+    sequence_ids = []
     # parse sequences
     if sequences != None:
         result += "\tlocal sequences = {\n"
@@ -519,6 +521,8 @@ if __name__ == '__main__':
                 info[key.text] = value
 
                 i += 2
+
+            sequence_ids.append(info['sequenceId'].text)
 
             result += "\t\t[" + info['sequenceId'].text + "] = {\n\t"
             result += "\t\tname = '" + info['name'].text + "',\n\t"
@@ -556,7 +560,7 @@ if __name__ == '__main__':
 
     # parse graph
     result += "\tlocal node_ref_size = cc.Director:getInstance():getWinSize()\n"
-    result += parse_node(nodeGraph, 'node', 0 if sequences == None else len(sequences))
+    result += parse_node(nodeGraph, 'node', sequence_ids)
 
     if sequences != None:
         result += "\tnode.sequences = sequences\n"
