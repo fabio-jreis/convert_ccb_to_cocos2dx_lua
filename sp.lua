@@ -149,16 +149,22 @@ function sp.addAnimFuncs( node )
         end
     end
 
-    node:scheduleUpdateWithPriorityLua(updateAnim, 0)
     node.playAnim = playAnim
     node.resetAnim = resetAnim
+    node.updateAnim = updateAnim
 end
 
 function sp.addBasicFuncs( node )
     local function onNodeEvent(event)
         if event == "enter" then
+            if node.updateAnim then
+                node._animScheduleEntry = cc.Director:getInstance():getScheduler():scheduleScriptFunc(node.updateAnim, 0, false)
+            end 
             if node.onEnter then node.onEnter() end
         elseif event == "exit" then
+            if node._animScheduleEntry then
+                cc.Director:getInstance():getScheduler():unscheduleScriptEntry(node._animScheduleEntry)
+            end
             if node.onExit then node.onExit() end
         elseif event == 'cleanup' then
             if node.onCleanup then node.onCleanup() end
